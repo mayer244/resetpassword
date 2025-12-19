@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Engenheiro Debugger ™ - Recuperação de Senha</title>
-    <link rel="icon" type="image/png" href="https://supabase.engenheiroia.com.br/storage/v1/object/sign/n8ndebuger/logo%20preta%20128x128.png?token=eyJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJuOG5kZWJ1Z2VyL2xvZ28gcHJldGEgMTI4eDEyOC5wbmciLCJpYXQiOjE3NTI4NTU2MDEsImV4cCI6MTc4NDM5MTYwMX0.oP14kRbCGephir7ubHb0MJYeoXN1e20nn02Yny0j6GY" />
-    <link rel="shortcut icon" type="image/png" href="https://supabase.engenheiroia.com.br/storage/v1/object/sign/n8ndebuger/logo%20preta%20128x128.png?token=eyJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJuOG5kZWJ1Z2VyL2xvZ28gcHJldGEgMTI4eDEyOC5wbmciLCJpYXQiOjE3NTI4NTU2MDEsImV4cCI6MTc4NDM5MTYwMX0.oP14kRbCGephir7ubHb0MJYeoXN1e20nn02Yny0j6GY" />
+    <link rel="icon" type="image/png"
+        href="https://supabase.engenheiroia.com.br/storage/v1/object/sign/n8ndebuger/logo%20preta%20128x128.png?token=eyJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJuOG5kZWJ1Z2VyL2xvZ28gcHJldGEgMTI4eDEyOC5wbmciLCJpYXQiOjE3NTI4NTU2MDEsImV4cCI6MTc4NDM5MTYwMX0.oP14kRbCGephir7ubHb0MJYeoXN1e20nn02Yny0j6GY" />
+    <link rel="shortcut icon" type="image/png"
+        href="https://supabase.engenheiroia.com.br/storage/v1/object/sign/n8ndebuger/logo%20preta%20128x128.png?token=eyJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJuOG5kZWJ1Z2VyL2xvZ28gcHJldGEgMTI4eDEyOC5wbmciLCJpYXQiOjE3NTI4NTU2MDEsImV4cCI6MTc4NDM5MTYwMX0.oP14kRbCGephir7ubHb0MJYeoXN1e20nn02Yny0j6GY" />
     <style>
         body {
             margin: 0;
@@ -207,8 +210,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .back-link {
@@ -235,6 +243,7 @@
         }
     </style>
 </head>
+
 <body>
     <!-- Header removido conforme solicitado -->
 
@@ -254,7 +263,8 @@
                 <div class="form-group">
                     <label for="newPassword">Nova Senha</label>
                     <div class="password-input-container">
-                        <input type="password" id="newPassword" name="newPassword" placeholder="Digite sua nova senha" required>
+                        <input type="password" id="newPassword" name="newPassword" placeholder="Digite sua nova senha"
+                            required>
                         <button type="button" class="password-toggle" id="togglePassword1">
                             <span class="eye-icon">👁️</span>
                         </button>
@@ -273,7 +283,8 @@
                 <div class="form-group">
                     <label for="confirmPassword">Confirmar Nova Senha</label>
                     <div class="password-input-container">
-                        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Digite novamente sua nova senha" required>
+                        <input type="password" id="confirmPassword" name="confirmPassword"
+                            placeholder="Digite novamente sua nova senha" required>
                         <button type="button" class="password-toggle" id="togglePassword2">
                             <span class="eye-icon">👁️</span>
                         </button>
@@ -283,9 +294,8 @@
                 <button type="submit" class="btn btn-primary" id="submitBtn">Redefinir Senha</button>
             </form>
 
-            <button type="button" class="btn btn-secondary" onclick="window.location.href='index.html'">Voltar ao Início</button>
-
-            <a href="popup.html" class="back-link">← Voltar para o Login</a>
+            <button type="button" class="btn btn-secondary" onclick="window.location.href='index.html'">Voltar ao
+                Início</button>
         </div>
     </main>
 
@@ -294,7 +304,7 @@
         // Configuração do Supabase
         const SUPABASE_URL = 'https://supabase.engenheirodeia.com.br';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogImFub24iLAogICJpc3MiOiAic3VwYWJhc2UiLAogICJpYXQiOiAxNzE1MDUwODAwLAogICJleHAiOiAxODcyODE3MjAwCn0.2IzHoogHxgWt_8Gl8VF1hizdSeV12jUGj22cr0VBQHs';
-        
+
         // Inicializar cliente Supabase
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -304,17 +314,45 @@
                 this.messageContainer = document.getElementById('messageContainer');
                 this.loadingIndicator = document.getElementById('loadingIndicator');
                 this.submitBtn = document.getElementById('submitBtn');
-                
+                this.isRecoveryMode = false;
+
                 this.init();
             }
 
             async init() {
                 this.form.addEventListener('submit', this.handleSubmit.bind(this));
-                
+
                 // Configurar botões de mostrar/ocultar senha
                 this.setupPasswordToggle();
-                
-                // Verificar se o usuário está autenticado (o Supabase já processou os tokens automaticamente)
+
+                // Desabilitar o botão inicialmente até verificar a sessão
+                this.submitBtn.disabled = true;
+
+                // Escutar eventos de autenticação do Supabase
+                supabase.auth.onAuthStateChange(async (event, session) => {
+                    console.log('Auth event:', event, 'Session:', !!session);
+
+                    if (event === 'PASSWORD_RECOVERY') {
+                        // Este evento é disparado quando o usuário acessa via link de recuperação
+                        console.log('Modo de recuperação de senha ativado!');
+                        this.isRecoveryMode = true;
+                        this.showMessage('Link de redefinição válido. Digite sua nova senha.', 'success');
+                        this.submitBtn.disabled = false;
+                    } else if (event === 'SIGNED_IN' && session) {
+                        // Verificar se veio de um link de recuperação
+                        const urlParams = new URLSearchParams(window.location.hash.substring(1));
+                        const type = urlParams.get('type');
+
+                        if (type === 'recovery') {
+                            console.log('Usuário autenticado via link de recuperação');
+                            this.isRecoveryMode = true;
+                            this.showMessage('Link de redefinição válido. Digite sua nova senha.', 'success');
+                            this.submitBtn.disabled = false;
+                        }
+                    }
+                });
+
+                // Verificar manualmente se há tokens na URL e tentar processar
                 await this.checkAuthSession();
             }
 
@@ -325,69 +363,56 @@
                     const accessToken = urlParams.get('access_token');
                     const refreshToken = urlParams.get('refresh_token');
                     const type = urlParams.get('type');
-                    
+
                     console.log('URL params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
-                    
-                    // Se há tokens na URL, aguardar o Supabase processar
+
+                    // Se há tokens na URL, tentar definir a sessão manualmente
                     if (accessToken && refreshToken && type === 'recovery') {
-                        console.log('Tokens de recuperação encontrados, aguardando processamento...');
-                        
-                        // Aguardar um pouco para o Supabase processar os tokens
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                        
-                        // Verificar sessão após processamento
-                        const { data: { session }, error } = await supabase.auth.getSession();
-                        
-                        console.log('Sessão após processamento:', { session: !!session, error });
-                        
-                        if (error) {
-                            console.error('Erro ao verificar sessão:', error);
+                        console.log('Tokens de recuperação encontrados, definindo sessão...');
+
+                        // Definir a sessão usando os tokens da URL
+                        const { data, error: setSessionError } = await supabase.auth.setSession({
+                            access_token: accessToken,
+                            refresh_token: refreshToken
+                        });
+
+                        console.log('Resultado setSession:', { data: !!data, error: setSessionError });
+
+                        if (setSessionError) {
+                            console.error('Erro ao definir sessão:', setSessionError);
                             this.showMessage('Link de redefinição inválido ou expirado.', 'error');
                             this.submitBtn.disabled = true;
-                            return;
-                        }
-
-                        if (session && session.user) {
-                            // Usuário está autenticado temporariamente para redefinir senha
+                        } else if (data && data.session) {
+                            console.log('Sessão definida com sucesso!');
+                            this.isRecoveryMode = true;
                             this.showMessage('Link de redefinição válido. Digite sua nova senha.', 'success');
                             this.submitBtn.disabled = false;
+                        }
+                    } else if (!accessToken) {
+                        // Verificar se já existe uma sessão ativa
+                        const { data: { session }, error } = await supabase.auth.getSession();
+
+                        if (session && session.user) {
+                            // Verificar se a sessão é de recuperação
+                            console.log('Sessão existente encontrada');
+                            this.showMessage('Sessão ativa. Digite sua nova senha.', 'success');
+                            this.isRecoveryMode = true;
+                            this.submitBtn.disabled = false;
                         } else {
-                            // Tentar definir a sessão manualmente se o Supabase não processou automaticamente
-                            try {
-                                const { data, error: setSessionError } = await supabase.auth.setSession({
-                                    access_token: accessToken,
-                                    refresh_token: refreshToken
-                                });
-                                
-                                if (setSessionError) {
-                                    console.error('Erro ao definir sessão:', setSessionError);
-                                    this.showMessage('Link de redefinição inválido ou expirado.', 'error');
-                                    this.submitBtn.disabled = true;
-                                } else {
-                                    console.log('Sessão definida manualmente com sucesso');
-                                    this.showMessage('Link de redefinição válido. Digite sua nova senha.', 'success');
-                                    this.submitBtn.disabled = false;
+                            // Não há tokens de recuperação na URL
+                            const urlError = urlParams.get('error');
+
+                            if (urlError) {
+                                let errorMessage = 'Link de redefinição inválido ou expirado.';
+                                if (urlError === 'access_denied') {
+                                    errorMessage = 'Link de redefinição expirado. Solicite um novo link.';
                                 }
-                            } catch (setSessionError) {
-                                console.error('Erro ao definir sessão manualmente:', setSessionError);
-                                this.showMessage('Link de redefinição inválido ou expirado.', 'error');
-                                this.submitBtn.disabled = true;
+                                this.showMessage(errorMessage, 'error');
+                            } else {
+                                this.showMessage('Link de redefinição não encontrado. Acesse através do email recebido.', 'error');
                             }
+                            this.submitBtn.disabled = true;
                         }
-                    } else {
-                        // Não há tokens de recuperação na URL
-                        const urlError = urlParams.get('error');
-                        
-                        if (urlError) {
-                            let errorMessage = 'Link de redefinição inválido ou expirado.';
-                            if (urlError === 'access_denied') {
-                                errorMessage = 'Link de redefinição expirado. Solicite um novo link.';
-                            }
-                            this.showMessage(errorMessage, 'error');
-                        } else {
-                            this.showMessage('Link de redefinição não encontrado. Acesse através do email recebido.', 'error');
-                        }
-                        this.submitBtn.disabled = true;
                     }
                 } catch (error) {
                     console.error('Erro ao verificar autenticação:', error);
@@ -444,7 +469,7 @@
 
             async handleSubmit(e) {
                 e.preventDefault();
-                
+
                 const newPassword = document.getElementById('newPassword').value;
                 const confirmPassword = document.getElementById('confirmPassword').value;
 
@@ -464,26 +489,36 @@
                 try {
                     // Verificar se o usuário ainda está autenticado
                     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-                    
+
+                    console.log('Sessão antes de atualizar senha:', { session: !!session, user: session?.user?.email, error: sessionError });
+
                     if (sessionError || !session) {
                         this.showMessage('Sessão expirada. Acesse novamente através do link do email.', 'error');
+                        this.showLoading(false);
                         return;
                     }
 
                     // Usar o método nativo do Supabase para atualizar a senha
-                    const { error } = await supabase.auth.updateUser({
+                    console.log('Chamando updateUser para atualizar senha...');
+                    const { data: updateData, error } = await supabase.auth.updateUser({
                         password: newPassword
                     });
+
+                    console.log('Resultado updateUser:', { data: updateData, error });
 
                     if (error) {
                         console.error('Erro ao redefinir senha:', error);
                         this.showMessage(`Erro ao redefinir senha: ${error.message}`, 'error');
                     } else {
-                        this.showMessage('Senha redefinida com sucesso! Você será redirecionado para o login.', 'success');
-                        
+                        console.log('Senha atualizada com sucesso!');
+                        this.showMessage('Senha redefinida com sucesso! Você será redirecionado.', 'success');
+
+                        // Limpar o hash da URL para evitar reprocessamento
+                        window.history.replaceState(null, '', window.location.pathname);
+
                         // Fazer logout para forçar novo login com a nova senha
                         await supabase.auth.signOut();
-                        
+
                         // Redirecionar após 3 segundos
                         setTimeout(() => {
                             window.location.href = 'https://chromewebstore.google.com/detail/engenheiro-de-ia/aecpfnkljdogjpbkmnfojbkhiojaiaoi?utm_source=ext_app_menu';
@@ -504,4 +539,5 @@
         });
     </script>
 </body>
+
 </html>
