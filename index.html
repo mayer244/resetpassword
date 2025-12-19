@@ -306,7 +306,7 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogImFub24iLAogICJpc3MiOiAic3VwYWJhc2UiLAogICJpYXQiOiAxNzE1MDUwODAwLAogICJleHAiOiAxODcyODE3MjAwCn0.2IzHoogHxgWt_8Gl8VF1hizdSeV12jUGj22cr0VBQHs';
 
         // Inicializar cliente Supabase
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         class PasswordReset {
             constructor() {
@@ -335,7 +335,7 @@
                 console.log('Access token capturado:', !!this.accessToken);
 
                 // Escutar eventos de autenticação do Supabase
-                supabase.auth.onAuthStateChange(async (event, session) => {
+                supabaseClient.auth.onAuthStateChange(async (event, session) => {
                     console.log('Auth event:', event, 'Session:', !!session);
 
                     if (event === 'PASSWORD_RECOVERY') {
@@ -379,7 +379,7 @@
                         this.accessToken = accessToken;
 
                         // Definir a sessão usando os tokens da URL
-                        const { data, error: setSessionError } = await supabase.auth.setSession({
+                        const { data, error: setSessionError } = await supabaseClient.auth.setSession({
                             access_token: accessToken,
                             refresh_token: refreshToken
                         });
@@ -398,7 +398,7 @@
                         }
                     } else if (!accessToken) {
                         // Verificar se já existe uma sessão ativa
-                        const { data: { session }, error } = await supabase.auth.getSession();
+                        const { data: { session }, error } = await supabaseClient.auth.getSession();
 
                         if (session && session.user) {
                             // Verificar se a sessão é de recuperação
@@ -504,7 +504,7 @@
 
                     // Se não temos o token guardado, tentar obter da sessão
                     if (!tokenToUse) {
-                        const { data: { session } } = await supabase.auth.getSession();
+                        const { data: { session } } = await supabaseClient.auth.getSession();
                         if (session && session.access_token) {
                             tokenToUse = session.access_token;
                         }
@@ -520,7 +520,7 @@
 
                     // MÉTODO 1: Tentar via SDK primeiro
                     console.log('Tentando atualizar via SDK...');
-                    const { data: updateData, error: sdkError } = await supabase.auth.updateUser({
+                    const { data: updateData, error: sdkError } = await supabaseClient.auth.updateUser({
                         password: newPassword
                     });
 
@@ -566,7 +566,7 @@
 
                     // Fazer logout para forçar novo login com a nova senha
                     try {
-                        await supabase.auth.signOut();
+                        await supabaseClient.auth.signOut();
                     } catch (signOutError) {
                         console.log('Erro ao fazer signOut (ignorando):', signOutError);
                     }
