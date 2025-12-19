@@ -315,6 +315,7 @@
                 this.loadingIndicator = document.getElementById('loadingIndicator');
                 this.submitBtn = document.getElementById('submitBtn');
                 this.isRecoveryMode = false;
+                this.accessToken = null; // Guardar o token original da URL
 
                 this.init();
             }
@@ -328,6 +329,11 @@
                 // Desabilitar o botão inicialmente até verificar a sessão
                 this.submitBtn.disabled = true;
 
+                // Capturar o access_token da URL ANTES de qualquer outra coisa
+                const urlParams = new URLSearchParams(window.location.hash.substring(1));
+                this.accessToken = urlParams.get('access_token');
+                console.log('Access token capturado:', !!this.accessToken);
+
                 // Escutar eventos de autenticação do Supabase
                 supabase.auth.onAuthStateChange(async (event, session) => {
                     console.log('Auth event:', event, 'Session:', !!session);
@@ -340,7 +346,6 @@
                         this.submitBtn.disabled = false;
                     } else if (event === 'SIGNED_IN' && session) {
                         // Verificar se veio de um link de recuperação
-                        const urlParams = new URLSearchParams(window.location.hash.substring(1));
                         const type = urlParams.get('type');
 
                         if (type === 'recovery') {
@@ -370,6 +375,9 @@
                     if (accessToken && refreshToken && type === 'recovery') {
                         console.log('Tokens de recuperação encontrados, definindo sessão...');
 
+                        // Guardar o token original
+                        this.accessToken = accessToken;
+
                         // Definir a sessão usando os tokens da URL
                         const { data, error: setSessionError } = await supabase.auth.setSession({
                             access_token: accessToken,
@@ -398,6 +406,10 @@
                             this.showMessage('Sessão ativa. Digite sua nova senha.', 'success');
                             this.isRecoveryMode = true;
                             this.submitBtn.disabled = false;
+                            // Usar o token da sessão existente se não tivermos um
+                            if (!this.accessToken && session.access_token) {
+                                this.accessToken = session.access_token;
+                            }
                         } else {
                             // Não há tokens de recuperação na URL
                             const urlError = urlParams.get('error');
@@ -487,43 +499,83 @@
                 this.showLoading(true);
 
                 try {
-                    // Verificar se o usuário ainda está autenticado
-                    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                    // Obter o token de acesso atual
+                    let tokenToUse = this.accessToken;
 
-                    console.log('Sessão antes de atualizar senha:', { session: !!session, user: session?.user?.email, error: sessionError });
+                    // Se não temos o token guardado, tentar obter da sessão
+                    if (!tokenToUse) {
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (session && session.access_token) {
+                            tokenToUse = session.access_token;
+                        }
+                    }
 
-                    if (sessionError || !session) {
+                    console.log('Token disponível para atualização:', !!tokenToUse);
+
+                    if (!tokenToUse) {
                         this.showMessage('Sessão expirada. Acesse novamente através do link do email.', 'error');
                         this.showLoading(false);
                         return;
                     }
 
-                    // Usar o método nativo do Supabase para atualizar a senha
-                    console.log('Chamando updateUser para atualizar senha...');
-                    const { data: updateData, error } = await supabase.auth.updateUser({
+                    // MÉTODO 1: Tentar via SDK primeiro
+                    console.log('Tentando atualizar via SDK...');
+                    const { data: updateData, error: sdkError } = await supabase.auth.updateUser({
                         password: newPassword
                     });
 
-                    console.log('Resultado updateUser:', { data: updateData, error });
+                    console.log('Resultado SDK updateUser:', { data: updateData, error: sdkError });
 
-                    if (error) {
-                        console.error('Erro ao redefinir senha:', error);
-                        this.showMessage(`Erro ao redefinir senha: ${error.message}`, 'error');
+                    // MÉTODO 2: Se o SDK falhar ou não retornar dados, tentar via API REST diretamente
+                    if (sdkError || !updateData?.user) {
+                        console.log('SDK falhou ou não retornou dados, tentando via API REST...');
+
+                        const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'apikey': SUPABASE_ANON_KEY,
+                                'Authorization': `Bearer ${tokenToUse}`
+                            },
+                            body: JSON.stringify({
+                                password: newPassword
+                            })
+                        });
+
+                        const responseData = await response.json();
+                        console.log('Resposta API REST:', { status: response.status, ok: response.ok, data: responseData });
+
+                        if (!response.ok) {
+                            const errorMsg = responseData.error_description || responseData.message || responseData.msg || 'Erro desconhecido';
+                            console.error('Erro API REST:', errorMsg);
+                            this.showMessage(`Erro ao redefinir senha: ${errorMsg}`, 'error');
+                            this.showLoading(false);
+                            return;
+                        }
+
+                        console.log('Senha atualizada com sucesso via API REST!');
                     } else {
-                        console.log('Senha atualizada com sucesso!');
-                        this.showMessage('Senha redefinida com sucesso! Você será redirecionado.', 'success');
-
-                        // Limpar o hash da URL para evitar reprocessamento
-                        window.history.replaceState(null, '', window.location.pathname);
-
-                        // Fazer logout para forçar novo login com a nova senha
-                        await supabase.auth.signOut();
-
-                        // Redirecionar após 3 segundos
-                        setTimeout(() => {
-                            window.location.href = 'https://chromewebstore.google.com/detail/engenheiro-de-ia/aecpfnkljdogjpbkmnfojbkhiojaiaoi?utm_source=ext_app_menu';
-                        }, 3000);
+                        console.log('Senha atualizada com sucesso via SDK!');
                     }
+
+                    // Sucesso!
+                    this.showMessage('Senha redefinida com sucesso! Você será redirecionado.', 'success');
+
+                    // Limpar o hash da URL para evitar reprocessamento
+                    window.history.replaceState(null, '', window.location.pathname);
+
+                    // Fazer logout para forçar novo login com a nova senha
+                    try {
+                        await supabase.auth.signOut();
+                    } catch (signOutError) {
+                        console.log('Erro ao fazer signOut (ignorando):', signOutError);
+                    }
+
+                    // Redirecionar após 3 segundos
+                    setTimeout(() => {
+                        window.location.href = 'https://chromewebstore.google.com/detail/engenheiro-de-ia/aecpfnkljdogjpbkmnfojbkhiojaiaoi?utm_source=ext_app_menu';
+                    }, 3000);
+
                 } catch (error) {
                     console.error('Erro inesperado ao redefinir senha:', error);
                     this.showMessage(`Erro inesperado: ${error.message}`, 'error');
